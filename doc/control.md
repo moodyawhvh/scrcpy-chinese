@@ -1,148 +1,119 @@
-# Control
+> 🌐 本文档由 [Genymobile/scrcpy](https://github.com/Genymobile/scrcpy) 翻译,英文原版见原项目。
 
-## Read-only
+# 控制
 
-To disable controls (everything which can interact with the device: input keys,
-mouse events, drag&drop files):
+## 只读模式
+
+禁用一切控制手段(所有能与设备交互的东西:按键输入、鼠标事件、文件拖放):
 
 ```bash
 scrcpy --no-control
-scrcpy -n   # short version
+scrcpy -n   # 简写
 ```
 
-## Keyboard and mouse
+## 键盘和鼠标
 
-Read [keyboard](keyboard.md) and [mouse](mouse.md).
+参见 [键盘](keyboard.md) 和 [鼠标](mouse.md)。
 
 
-## Control only
+## 仅控制
 
-To control the device without mirroring:
+不投屏、只控制设备:
 
 ```bash
 scrcpy --no-video --no-audio
 ```
 
-By default, the mouse is disabled when video playback is turned off.
+默认情况下,视频播放关闭时鼠标也被禁用。
 
-To control the device using a relative mouse, enable UHID mouse mode:
+要用相对鼠标控制设备,启用 UHID 鼠标模式:
 
 ```bash
 scrcpy --no-video --no-audio --mouse=uhid
-scrcpy --no-video --no-audio -M  # short version
+scrcpy --no-video --no-audio -M  # 简写
 ```
 
-To also use a UHID keyboard, set it explicitly:
+还要用 UHID 键盘的话,需要显式设置:
 
 ```bash
 scrcpy --no-video --no-audio --mouse=uhid --keyboard=uhid
-scrcpy --no-video --no-audio -MK  # short version
+scrcpy --no-video --no-audio -MK  # 简写
 ```
 
-To use AOA instead (over USB only):
+改用 AOA 的话(仅限 USB):
 
 ```bash
 scrcpy --no-video --no-audio --keyboard=aoa --mouse=aoa
 ```
 
 
-## Copy-paste
+## 复制粘贴
 
-Any time the Android clipboard changes, it is automatically synchronized to the
-computer clipboard.
+Android 剪贴板每次变化,都会自动同步到电脑剪贴板。
 
-Any <kbd>Ctrl</kbd> shortcut is forwarded to the device. In particular:
- - <kbd>Ctrl</kbd>+<kbd>c</kbd> typically copies
- - <kbd>Ctrl</kbd>+<kbd>x</kbd> typically cuts
- - <kbd>Ctrl</kbd>+<kbd>v</kbd> typically pastes (after computer-to-device
-   clipboard synchronization)
+所有 <kbd>Ctrl</kbd> 快捷键都会转发给设备,特别是:
+ - <kbd>Ctrl</kbd>+<kbd>c</kbd> 通常执行复制
+ - <kbd>Ctrl</kbd>+<kbd>x</kbd> 通常执行剪切
+ - <kbd>Ctrl</kbd>+<kbd>v</kbd> 通常执行粘贴(先做电脑到设备的剪贴板同步)
 
-This typically works as you expect.
+一般表现和你的预期一致。
 
-The actual behavior depends on the active application though. For example,
-_Termux_ sends SIGINT on <kbd>Ctrl</kbd>+<kbd>c</kbd> instead, and _K-9 Mail_
-composes a new message.
+不过实际行为取决于当前活跃的应用。例如,_Termux_ 在 <kbd>Ctrl</kbd>+<kbd>c</kbd> 时发送的是 SIGINT 信号,而 _K-9 Mail_ 会新建一封邮件。
 
-To copy, cut and paste in such cases (but only supported on Android >= 7):
- - <kbd>MOD</kbd>+<kbd>c</kbd> injects `COPY`
- - <kbd>MOD</kbd>+<kbd>x</kbd> injects `CUT`
- - <kbd>MOD</kbd>+<kbd>v</kbd> injects `PASTE` (after computer-to-device
-   clipboard synchronization)
+这种情况下想复制、剪切、粘贴(仅支持 Android >= 7):
+ - <kbd>MOD</kbd>+<kbd>c</kbd> 注入 `COPY`
+ - <kbd>MOD</kbd>+<kbd>x</kbd> 注入 `CUT`
+ - <kbd>MOD</kbd>+<kbd>v</kbd> 注入 `PASTE`(先做电脑到设备的剪贴板同步)
 
-In addition, <kbd>MOD</kbd>+<kbd>Shift</kbd>+<kbd>v</kbd> injects the computer
-clipboard text as a sequence of key events. This is useful when the component
-does not accept text pasting (for example in _Termux_), but it can break
-non-ASCII content.
+另外,<kbd>MOD</kbd>+<kbd>Shift</kbd>+<kbd>v</kbd> 会把电脑剪贴板文本作为一系列按键事件注入。这在组件不接受粘贴文本时很有用(比如 _Termux_),但可能破坏非 ASCII 内容。
 
-**WARNING:** Pasting the computer clipboard to the device (either via
-<kbd>Ctrl</kbd>+<kbd>v</kbd> or <kbd>MOD</kbd>+<kbd>v</kbd>) copies the content
-into the Android clipboard. As a consequence, any Android application could read
-its content. You should avoid pasting sensitive content (like passwords) that
-way.
+**警告:** 把电脑剪贴板粘贴到设备(无论 <kbd>Ctrl</kbd>+<kbd>v</kbd> 还是 <kbd>MOD</kbd>+<kbd>v</kbd>)都会把内容复制进 Android 剪贴板。这样任何 Android 应用都能读到它。请避免用这种方式粘贴敏感内容(比如密码)。
 
-Some Android devices do not behave as expected when setting the device clipboard
-programmatically. An option `--legacy-paste` is provided to change the behavior
-of <kbd>Ctrl</kbd>+<kbd>v</kbd> and <kbd>MOD</kbd>+<kbd>v</kbd> so that they
-also inject the computer clipboard text as a sequence of key events (the same
-way as <kbd>MOD</kbd>+<kbd>Shift</kbd>+<kbd>v</kbd>).
+部分 Android 设备在程序化设置设备剪贴板时表现异常。对此提供了 `--legacy-paste` 选项,改变 <kbd>Ctrl</kbd>+<kbd>v</kbd> 和 <kbd>MOD</kbd>+<kbd>v</kbd> 的行为,让它们同样把电脑剪贴板文本作为一系列按键事件注入(与 <kbd>MOD</kbd>+<kbd>Shift</kbd>+<kbd>v</kbd> 相同)。
 
-To disable automatic clipboard synchronization, use
-`--no-clipboard-autosync`.
+要禁用剪贴板自动同步,使用 `--no-clipboard-autosync`。
 
 
-## Pinch-to-zoom, rotate and tilt simulation
+## 双指缩放、旋转与倾斜模拟
 
-To simulate "pinch-to-zoom": <kbd>Ctrl</kbd>+_click-and-move_.
+模拟"双指缩放":<kbd>Ctrl</kbd>+_按住并移动_。
 
-More precisely, hold down <kbd>Ctrl</kbd> while pressing the left-click button.
-Until the left-click button is released, all mouse movements scale and rotate
-the content (if supported by the app) relative to the center of the screen.
+更准确地说,按住 <kbd>Ctrl</kbd> 的同时按下左键。在松开左键之前,所有鼠标移动都会以屏幕中心为基准缩放和旋转内容(如果应用支持)。
 
 https://github.com/Genymobile/scrcpy/assets/543275/26c4a920-9805-43f1-8d4c-608752d04767
 
-To simulate a vertical tilt gesture: <kbd>Shift</kbd>+_click-and-move-up-or-down_.
+模拟垂直倾斜手势:<kbd>Shift</kbd>+_按住并上下移动_。
 
 https://github.com/Genymobile/scrcpy/assets/543275/1e252341-4a90-4b29-9d11-9153b324669f
 
-Similarly, to simulate a horizontal tilt gesture:
-<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+_click-and-move-left-or-right_.
+同理,模拟水平倾斜手势:<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+_按住并左右移动_。
 
-Technically, _scrcpy_ generates additional touch events from a "virtual finger"
-at a location inverted through the center of the screen. When pressing
-<kbd>Ctrl</kbd> the _x_ and _y_ coordinates are inverted. Using <kbd>Shift</kbd>
-only inverts _x_, whereas using <kbd>Ctrl</kbd>+<kbd>Shift</kbd> only inverts
-_y_.
+原理上,_scrcpy_ 通过一个位置关于屏幕中心镜像的"虚拟手指"生成额外的触摸事件。按住 <kbd>Ctrl</kbd> 时,_x_ 和 _y_ 坐标都取反;只用 <kbd>Shift</kbd> 时只取反 _x_;而 <kbd>Ctrl</kbd>+<kbd>Shift</kbd> 只取反 _y_。
 
-This only works for the default mouse mode (`--mouse=sdk`).
+这只在默认鼠标模式(`--mouse=sdk`)下有效。
 
 
-## File drop
+## 文件拖放
 
-### Install APK
+### 安装 APK
 
-To install an APK, drag & drop an APK file (ending with `.apk`) to the _scrcpy_
-window.
+安装 APK:把一个 APK 文件(以 `.apk` 结尾)拖放到 _scrcpy_ 窗口即可。
 
-There is no visual feedback, a log is printed to the console.
+没有可视化反馈,控制台会打印一条日志。
 
 
-### Push file to device
+### 推送文件到设备
 
-To push a file to `/sdcard/Download/` on the device, drag & drop a (non-APK)
-file to the _scrcpy_ window.
+把(非 APK)文件拖放到 _scrcpy_ 窗口,即可推送到设备的 `/sdcard/Download/`。
 
-There is no visual feedback, a log is printed to the console.
+没有可视化反馈,控制台会打印一条日志。
 
-The target directory can be changed on start:
+目标目录可以在启动时修改:
 
 ```bash
 scrcpy --push-target=/sdcard/Movies/
 ```
 
-After each successful push, _scrcpy_ requests the media scanner to scan the
-"push directory" so that the new files immediately appear in media apps.
+每次推送成功后,_scrcpy_ 会请求媒体扫描器扫描"推送目录",让新文件立即出现在媒体应用中。
 
-Note that some gallery apps only show files from a fixed list of folders
-(typically `DCIM/Camera`) in their main view; the file is then still reachable
-through the system Photo Picker and the folder view, but may not appear on the
-gallery home screen.
+注意,部分相册应用的主界面只显示固定文件夹列表(通常是 `DCIM/Camera`)里的文件;此时文件仍可通过系统照片选择器和文件夹视图访问,但可能不会出现在相册首页。
