@@ -1,24 +1,25 @@
-# Camera
+> 🌐 本文档由 [Genymobile/scrcpy](https://github.com/Genymobile/scrcpy) 翻译,英文原版见原项目。
 
-Camera mirroring is supported for devices with Android 12 or higher.
+# 相机
 
-To capture the camera instead of the device screen:
+Android 12 及以上版本的设备支持相机投屏。
+
+用相机代替设备屏幕进行采集:
 
 ```bash
 scrcpy --video-source=camera
 ```
 
-By default, it automatically switches [audio source](audio.md#source) to
-microphone (as if `--audio-source=mic` were also passed).
+默认情况下,它会自动把[音源](audio.md#source)切换为麦克风(相当于同时传入了 `--audio-source=mic`)。
 
 ```bash
-scrcpy --video-source=display  # default is --audio-source=output
-scrcpy --video-source=camera   # default is --audio-source=mic
-scrcpy --video-source=display --audio-source=mic    # force display AND microphone
-scrcpy --video-source=camera --audio-source=output  # force camera AND device audio output
+scrcpy --video-source=display  # 默认 --audio-source=output
+scrcpy --video-source=camera   # 默认 --audio-source=mic
+scrcpy --video-source=display --audio-source=mic    # 强制 屏幕+麦克风
+scrcpy --video-source=camera --audio-source=output  # 强制 相机+设备音频输出
 ```
 
-Audio can be disabled:
+可以禁用音频:
 
 ```bash
 # audio not captured at all
@@ -30,70 +31,63 @@ scrcpy --video-source=camera --no-audio-playback --record=file.mp4
 ```
 
 
-## List
+## 列表
 
-To list the cameras available (with their declared valid sizes and frame rates):
+列出可用相机(及其声明的有效尺寸和帧率):
 
 ```bash
 scrcpy --list-cameras
 scrcpy --list-camera-sizes
 ```
 
-_Note that the sizes and frame rates are declarative. They are not accurate on
-all devices: some of them are declared but not supported, while some others are
-not declared but supported._
+_注意,尺寸和帧率只是声明值。它们并非在所有设备上都准确:有些声明了但实际不支持,有些没声明但实际支持。_
 
 
-## Selection
+## 选择
 
-It is possible to pass an explicit camera id (as listed by `--list-cameras`):
+可以显式传入相机 id(见 `--list-cameras` 列表):
 
 ```bash
 scrcpy --video-source=camera --camera-id=0
 ```
 
-Alternatively, the camera may be selected automatically:
+也可以自动选择相机:
 
 ```bash
-scrcpy --video-source=camera                           # use the first camera
-scrcpy --video-source=camera --camera-facing=front     # use the first front camera
-scrcpy --video-source=camera --camera-facing=back      # use the first back camera
-scrcpy --video-source=camera --camera-facing=external  # use the first external camera
+scrcpy --video-source=camera                           # 使用第一个相机
+scrcpy --video-source=camera --camera-facing=front     # 使用第一个前置相机
+scrcpy --video-source=camera --camera-facing=back      # 使用第一个后置相机
+scrcpy --video-source=camera --camera-facing=external  # 使用第一个外接相机
 ```
 
-If `--camera-id` is specified, then `--camera-facing` is forbidden (the id
-already determines the camera):
+指定了 `--camera-id` 时禁止使用 `--camera-facing`(id 已经确定了相机):
 
 ```bash
-scrcpy --video-source=camera --camera-id=0 --camera-facing=front  # error
+scrcpy --video-source=camera --camera-id=0 --camera-facing=front  # 报错
 ```
 
 
-### Size selection
+### 尺寸选择
 
-It is possible to pass an explicit camera size:
+可以显式传入相机尺寸:
 
 ```bash
 scrcpy --video-source=camera --camera-size=1920x1080
 ```
 
-The given size may be listed among the declared valid sizes
-(`--list-camera-sizes`), but may also be anything else (some devices support
-arbitrary sizes):
+给定的尺寸可以列在声明的有效尺寸中(`--list-camera-sizes`),也可以是任意其他值(部分设备支持任意尺寸):
 
 ```bash
 scrcpy --video-source=camera --camera-size=1840x444
 ```
 
-Alternatively, a declared valid size (among the ones listed by
-`list-camera-sizes`) may be selected automatically.
+也可以自动选择一个已声明的有效尺寸(从 `list-camera-sizes` 列出的尺寸中选择)。
 
-Two constraints are supported:
- - `-m`/`--max-size` (already used for display mirroring), for example `-m1920`;
- - `--camera-ar` to specify an aspect ratio (`<num>:<den>`, `<value>` or
-   `sensor`).
+支持两种约束:
+ - `-m`/`--max-size`(屏幕投屏已在用的参数),例如 `-m1920`;
+ - `--camera-ar` 指定宽高比(`<num>:<den>`、`<value>` 或 `sensor`)。
 
-Some examples:
+一些例子:
 
 ```bash
 scrcpy --video-source=camera                          # use the greatest width and the greatest associated height
@@ -104,41 +98,38 @@ scrcpy --video-source=camera --camera-ar=sensor       # use the greatest size wi
 scrcpy --video-source=camera -m1920 --camera-ar=16:9  # use the greatest width not above 1920 and the closest to 16:9 aspect ratio
 ```
 
-If `--camera-size` is specified, then `-m`/`--max-size` and `--camera-ar` are
-forbidden (the size is determined by the value given explicitly):
+指定了 `--camera-size` 时禁止使用 `-m`/`--max-size` 和 `--camera-ar`(尺寸由显式给定值决定):
 
 ```bash
-scrcpy --video-source=camera --camera-size=1920x1080 -m3000  # error
+scrcpy --video-source=camera --camera-size=1920x1080 -m3000  # 报错
 ```
 
 
-## Rotation
+## 旋转
 
-To rotate the captured video, use the [video orientation](video.md#orientation)
-option:
+要旋转采集到的视频,使用[视频方向](video.md#orientation)选项:
 
 ```bash
 scrcpy --video-source=camera --camera-size=1920x1080 --orientation=90
 ```
 
 
-## Frame rate
+## 帧率
 
-By default, camera is captured at Android's default frame rate (30 fps).
+默认按 Android 的默认帧率(30 fps)采集相机。
 
-To configure a different frame rate:
+要配置其他帧率:
 
 ```bash
 scrcpy --video-source=camera --camera-fps=60
 ```
 
 
-## High speed capture
+## 高速采集
 
-The Android camera API also supports a [high speed capture mode][high speed].
+Android 相机 API 还支持[高速采集模式][high speed]。
 
-This mode is restricted to specific resolutions and frame rates, listed by
-`--list-camera-sizes`.
+该模式仅限特定的分辨率和帧率,可用 `--list-camera-sizes` 列出。
 
 ```bash
 scrcpy --video-source=camera --camera-size=1920x1080 --camera-high-speed --camera-fps=240
@@ -147,17 +138,15 @@ scrcpy --video-source=camera --camera-size=1920x1080 --camera-high-speed --camer
 [high speed]: https://developer.android.com/reference/android/hardware/camera2/CameraConstrainedHighSpeedCaptureSession
 
 
-## Brace expansion tip
+## 花括号展开小技巧
 
-All camera options start with `--camera-`, so if your shell supports it, you can
-benefit from [brace expansion] (for example, it is supported by _bash_ and
-_zsh_):
+所有相机选项都以 `--camera-` 开头,如果你的 shell 支持[花括号展开][brace expansion](_bash_ 和 _zsh_ 都支持),可以偷个懒:
 
 ```bash
 scrcpy --video-source=camera --camera-{facing=back,ar=16:9,high-speed,fps=120}
 ```
 
-This will be expanded as:
+它会被展开为:
 
 ```bash
 scrcpy --video-source=camera --camera-facing=back --camera-ar=16:9 --camera-high-speed --camera-fps=120
@@ -166,31 +155,28 @@ scrcpy --video-source=camera --camera-facing=back --camera-ar=16:9 --camera-high
 [brace expansion]: https://www.gnu.org/software/bash/manual/html_node/Brace-Expansion.html
 
 
-## Torch
+## 手电筒
 
-The camera torch can be turned on at startup by `--camera-torch`:
+启动时用 `--camera-torch` 打开相机手电筒:
 
 ```
 scrcpy --video-source=camera --camera-torch
 ```
 
-It can also be turned on and off dynamically with <kbd>MOD</kbd>+<kbd>t</kbd>
-and <kbd>MOD</kbd>+<kbd>Shift</kbd>+<kbd>t</kbd>, respectively.
+也可以分别用 <kbd>MOD</kbd>+<kbd>t</kbd> 和 <kbd>MOD</kbd>+<kbd>Shift</kbd>+<kbd>t</kbd> 动态开关。
 
 
-## Zoom
+## 变焦
 
-The camera zoom can be set with `--camera-zoom`:
+用 `--camera-zoom` 设置相机变焦:
 
 ```bash
 scrcpy --video-source=camera --camera-zoom=1.5
 ```
 
-It can also be adjusted dynamically using <kbd>MOD</kbd>+<kbd>↑</kbd> _(up)_ and
-<kbd>MOD</kbd>+<kbd>↓</kbd> _(down)_.
+也可以分别用 <kbd>MOD</kbd>+<kbd>↑</kbd> _(上)_ 和 <kbd>MOD</kbd>+<kbd>↓</kbd> _(下)_ 动态调节。
 
 
-## Webcam
+## 网络摄像头
 
-Combined with the [V4L2](v4l2.md) feature on Linux, the Android device camera
-may be used as a webcam on the computer.
+在 Linux 上与 [V4L2](v4l2.md) 功能结合,Android 设备相机可以在电脑上当网络摄像头用。
