@@ -37,14 +37,17 @@ import java.util.List;
 
 public final class Server {
 
+    // scrcpy-server 在设备上的自身路径(jar 包绝对路径)
     public static final String SERVER_PATH;
 
     static {
         String[] classPaths = System.getProperty("java.class.path").split(File.pathSeparator);
         // By convention, scrcpy is always executed with the absolute path of scrcpy-server.jar as the first item in the classpath
+        // 按约定,scrcpy 总是把 scrcpy-server.jar 的绝对路径放在 classpath 的第一项
         SERVER_PATH = classPaths[0];
     }
 
+    // 完成计数器:跟踪仍在运行的异步处理器,全部结束或出现致命错误时退出主循环
     private static class Completion {
         private int running;
         private boolean fatalError;
@@ -58,6 +61,7 @@ public final class Server {
             if (fatalError) {
                 this.fatalError = true;
             }
+            // 所有处理器都已结束,或发生了致命错误,安全退出主 Looper
             if (running == 0 || this.fatalError) {
                 Looper.getMainLooper().quitSafely();
             }
@@ -68,7 +72,9 @@ public final class Server {
         // not instantiable
     }
 
+    // scrcpy 主流程:校验版本要求 -> 建立连接 -> 按需启动控制/音频/视频处理器 -> 主循环等待
     private static void scrcpy(Options options) throws IOException, ConfigurationException {
+        // 相机投屏要求 Android 12 及以上
         if (Build.VERSION.SDK_INT < AndroidVersions.API_31_ANDROID_12 && options.getVideoSource() == VideoSource.CAMERA) {
             Ln.e("Camera mirroring is not supported before Android 12");
             throw new ConfigurationException("Camera mirroring is not supported");
@@ -87,6 +93,7 @@ public final class Server {
 
         CleanUp cleanUp = null;
 
+        // 启动清理线程:进程退出时恢复设备上被修改的设置
         if (options.getCleanup()) {
             cleanUp = CleanUp.start(options);
         }
@@ -98,10 +105,12 @@ public final class Server {
         boolean audio = options.getAudio();
         boolean sendDummyByte = options.getSendDummyByte();
 
+        // 应用各类兼容性 Workaround
         Workarounds.apply();
 
         List<AsyncProcessor> asyncProcessors = new ArrayList<>();
 
+        // 打开与客户端的桌面连接(socket 与文件描述符)
         DesktopConnection connection = DesktopConnection.open(scid, tunnelForward, video, audio, control, sendDummyByte);
         try {
             if (options.getSendDeviceMeta()) {
@@ -117,6 +126,7 @@ public final class Server {
             }
 
             if (audio) {
+                // 音频:直采音源(麦克风等)或回放采集,RAW 直接录制,否则走编码器
                 AudioCodec audioCodec = options.getAudioCodec();
                 AudioSource audioSource = options.getAudioSource();
                 AudioCapture audioCapture;
@@ -137,6 +147,7 @@ public final class Server {
             }
 
             if (video) {
+                // 视频:按来源选择屏幕/新建虚拟显示器/相机采集器,再交给 SurfaceEncoder 编码推流
                 Streamer videoStreamer = new Streamer(connection.getVideoFd(), options.getVideoCodec(), options.getSendStreamMeta(),
                         options.getSendFrameMeta());
                 SurfaceCapture surfaceCapture;
@@ -159,6 +170,7 @@ public final class Server {
                 }
             }
 
+            // 启动所有异步处理器,通过 Completion 回调在全部结束时退出主循环
             Completion completion = new Completion(asyncProcessors.size());
             for (AsyncProcessor asyncProcessor : asyncProcessors) {
                 asyncProcessor.start((fatalError) -> {
@@ -166,8 +178,9 @@ public final class Server {
                 });
             }
 
-            Looper.loop(); // interrupted by the Completion implementation
+            Looper.loop(); // interrupted by the Completion implementation // 由 Completion 逻辑中断
         } finally {
+            // 清理阶段:中断清理线程、停止各处理器、关闭连接并回收资源
             if (cleanUp != null) {
                 cleanUp.interrupt();
             }
@@ -194,6 +207,7 @@ public final class Server {
         }
     }
 
+    // 相当于 Looper.prepareMainLooper(),但允许退出(quitAllowed = true)
     private static void prepareMainLooper() {
         // Like Looper.prepareMainLooper(), but with quitAllowed set to true
         Looper.prepare();
@@ -209,6 +223,7 @@ public final class Server {
         }
     }
 
+    // JVM 入口:无论发生什么都要显式退出进程(见下方注释)
     public static void main(String... args) {
         int status = 0;
         try {
@@ -220,10 +235,13 @@ public final class Server {
             // By default, the Java process exits when all non-daemon threads are terminated.
             // The Android SDK might start some non-daemon threads internally, preventing the scrcpy server to exit.
             // So force the process to exit explicitly.
+            // 默认情况下,Java 进程在所有非守护线程结束后才退出。
+            // Android SDK 内部可能启动非守护线程,导致 scrcpy server 无法退出,因此必须显式退出。
             System.exit(status);
         }
     }
 
+    // 真正的初始化流程:设置未捕获异常处理 -> 降权 -> 准备主 Looper -> 解析参数 -> 按需列出信息或启动主流程
     private static void internalMain(String... args) throws Exception {
         Thread.UncaughtExceptionHandler defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
@@ -245,6 +263,7 @@ public final class Server {
         Ln.i("Device: [" + Build.MANUFACTURER + "] " + Build.BRAND + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ")");
 
         if (options.getList()) {
+            // --list-* 模式:只打印请求的信息,不做投屏
             if (options.getCleanup()) {
                 CleanUp.unlinkSelf();
             }
@@ -276,6 +295,7 @@ public final class Server {
         }
     }
 
+    // 以 root 身份运行时降权到 shell 用户(UID 2000),否则复制粘贴会失效
     @SuppressWarnings("deprecation")
     private static void dropRootPrivileges() {
         try {

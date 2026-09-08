@@ -24,11 +24,13 @@
 #include "util/str.h"
 #endif
 
+// scrcpy 客户端主入口:解析命令行 -> 初始化网络 -> 进入 scrcpy 主逻辑(或 OTG 模式)
 static int
 main_scrcpy(int argc, char *argv[]) {
 #ifdef _WIN32
     // disable buffering, we want logs immediately
     // even line buffering (setvbuf() with mode _IOLBF) is not sufficient
+    // Windows 下禁用输出缓冲,保证日志立即显示(行缓冲也不够快)
     setbuf(stdout, NULL);
     setbuf(stderr, NULL);
 #endif
@@ -51,6 +53,7 @@ main_scrcpy(int argc, char *argv[]) {
 
     bool term_title_saved = false;
 
+    // 解析命令行参数,失败则直接结束
     if (!scrcpy_parse_args(&args, argc, argv)) {
         ret = SCRCPY_EXIT_FAILURE;
         goto end;
@@ -99,6 +102,7 @@ main_scrcpy(int argc, char *argv[]) {
     }
 
 #ifdef HAVE_USB
+    // --otg 时走 OTG 模式(不依赖 adb),否则进入常规 scrcpy 流程
     ret = args.opts.otg ? scrcpy_otg(&args.opts) : scrcpy(&args.opts);
 #else
     ret = scrcpy(&args.opts);
@@ -110,6 +114,7 @@ net_cleanup:
     net_cleanup();
 
 end:
+    // 退出前按需暂停(便于双击运行时查看输出),并恢复终端标题
     if (args.pause_on_exit == SC_PAUSE_ON_EXIT_TRUE ||
             (args.pause_on_exit == SC_PAUSE_ON_EXIT_IF_ERROR &&
                 ret != SCRCPY_EXIT_SUCCESS)) {
@@ -125,6 +130,7 @@ end:
     return ret;
 }
 
+// Windows 上 argv 是 ANSI/本地编码,先把命令行转成 UTF-8 再传给主逻辑;非 Windows 直接进入
 int
 main(int argc, char *argv[]) {
 #ifndef _WIN32
@@ -132,6 +138,7 @@ main(int argc, char *argv[]) {
 #else
     (void) argc;
     (void) argv;
+    // 从 Windows 宽字符命令行构造 UTF-8 参数数组
     int wargc;
     wchar_t **wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
     if (!wargv) {
